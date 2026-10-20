@@ -1,0 +1,93 @@
+html, body, #root {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100vh;
+  overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  background-color: #030612; /* deeper dark premium background */
+  background-image: 
+    radial-gradient(circle at top center, rgba(34, 211, 238, 0.1) 0%, transparent 60%),
+    radial-gradient(circle at bottom center, rgba(0, 255, 136, 0.05) 0%, transparent 60%);
+  background-attachment: fixed;
+}
+
+@keyframes energy-border-flow {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 250% 50%; }
+}
+/* Layout Wrappers for Toggle System */
+.video-wrapper {
+  flex: 7;
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.video-wrapper.expanded {
+  flex: 10;
+}
+
+.sidebar-wrapper {
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.sidebar-wrapper.open {
+  flex: 3;
+  opacity: 1;
+}
+
+.sidebar-wrapper.collapsed {
+  flex: 0;
+  opacity: 0;
+  width: 0;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: none;
+}
+
+/* Glassmorphism Sidebar Toggle Button */
+.sidebar-toggle-btn {
+  position: absolute;
+  top: 50%;
+  right: -24px;
+  transform: translateY(-50%);
+  width: 24px;
+  height: 64px;
+  border-radius: 12px;
+  background: rgba(8, 13, 30, 0.65);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(34, 211, 238, 0.5);
+  color: #22d3ee;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 50;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 0 15px rgba(34, 211, 238, 0.2);
+}
+
+.sidebar-toggle-btn.collapsed {
+  right: 0px; 
+  border-radius: 12px 0 0 12px;
+  border-right: none;
+}
+
+.sidebar-toggle-btn:hover {
+  background: rgba(34, 211, 238, 0.15);
+  border-color: rgba(34, 211, 238, 1);
+  box-shadow: 0 0 20px rgba(34, 211, 238, 0.4);
+  color: #fff;
+  transform: translateY(-50%) scale(1.05);
+}
+

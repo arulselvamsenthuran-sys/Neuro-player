@@ -1,0 +1,201 @@
+/* Premium Menu Window */
+.menu-window {
+  position: fixed;
+  min-width: 200px;
+  background: rgba(50, 68, 122, 0.75);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(34, 211, 238, 0.2);
+  border-radius: 16px;
+  padding: 12px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6), 0 0 20px rgba(34, 211, 238, 0.1);
+  z-index: 999;
+}
+
+.nav {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  color: #9ca3af;
+  font-size: 14px;
+}
+
+.menu-item {
+  display: flex;
+  align-items: center;
+  height: 32px;
+  line-height: 32px;
+  padding: 0px 12px;
+  border-radius: 6px;
+  color: #e5e7eb;
+  cursor: pointer;
+  white-space: nowrap;
+  position: relative;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.menu-item::after {
+  content: "";
+  position: absolute;
+  bottom: 0px;
+  left: 8px;
+  right: 8px;
+  height: 2px;
+  background-color: #22d3ee;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 0 8px rgba(34, 211, 238, 0.6);
+  border-radius: 2px;
+}
+
+.menu-item:hover {
+  background-color: transparent;
+  color: #fff;
+  text-shadow: 0 0 8px rgba(34, 211, 238, 0.5);
+  transform: translateY(-1px);
+}
+
+.menu-item:hover::after,
+.menu-item.active::after {
+  transform: scaleX(1);
+}
+
+.menu-item:active {
+  transform: translateY(1px) scale(0.96);
+  text-shadow: 0 0 12px rgba(34, 211, 238, 0.9);
+}
+
+.menu-item.active {
+  background-color: transparent;
+  color: #ffffff;
+  text-shadow: 0 0 8px rgba(34, 211, 238, 0.8);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  padding: 6px;
+  color: cyan;
+}
+
+.logo {
+  font-size: 18px;
+  font-weight: bold;
+  padding: 0 12px;
+  /* Ensure static premium display */
+  animation: none !important;
+  text-shadow: none !important;
+}
+
+.logo-hover-effect {
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  padding-bottom: 4px;
+}
+
+.logo-hover-effect:hover {
+  transform: translateY(-1px);
+}
+
+.logo-hover-effect:hover .logo {
+  color: #fff;
+  text-shadow: 0 0 10px rgba(34, 211, 238, 0.6);
+}
+
+.logo-hover-effect:active {
+  transform: translateY(1px) scale(0.98);
+}
+
+.logo-hover-effect::after {
+  content: '';
+  position: absolute;
+  bottom: 0px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background-color: #22d3ee;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 0 8px rgba(34, 211, 238, 0.6);
+  border-radius: 2px;
+}
+
+.logo-hover-effect:hover::after {
+  transform: scaleX(1);
+}
+
+/* Premium Segmented Toggle UI */
+.segmented-toggle {
+  display: flex;
+  position: relative;
+  background: rgba(8, 13, 30, 0.45);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  padding: 4px;
+  width: 170px;
+  box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.5), 0 4px 15px rgba(0, 0, 0, 0.4);
+}
+
+.segmented-toggle::before {
+  content: '';
+  position: absolute;
+  top: 4px;
+  bottom: 4px;
+  left: 4px;
+  width: calc(50% - 4px);
+  background: rgba(34, 211, 238, 0.15);
+  border: 1px solid rgba(34, 211, 238, 0.5);
+  border-radius: 16px;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 0 15px rgba(34, 211, 238, 0.3);
+  z-index: 1;
+}
+
+.segmented-toggle[data-active="online"]::before {
+  transform: translateX(100%);
+  border-color: rgba(34, 211, 238, 0.9);
+  background: rgba(34, 211, 238, 0.2);
+  box-shadow: 0 0 20px rgba(34, 211, 238, 0.5);
+}
+
+.toggle-option {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #9ca3af;
+  z-index: 2;
+  cursor: pointer;
+  height: 28px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  user-select: none;
+}
+
+.window-item {
+  padding: 8px 12px;
+  font-size: 13px;
+  color: #a6b9cc;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  margin-bottom: 4px;
+  user-select: none;
+}
+
+.toggle-option:hover {
+  color: #e5e7eb;
+}
+
+.toggle-option.active {
+  color: #fff;
+  text-shadow: 0 0 8px rgba(34, 211, 238, 0.8);
+}

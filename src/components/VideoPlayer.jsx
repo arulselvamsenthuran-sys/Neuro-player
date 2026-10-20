@@ -1,0 +1,468 @@
+import React, {
+  forwardRef,
+  useEffect,
+  useImperativeHandle,
+  useRef,
+  useState,
+} from "react";
+import "./VideoPlayer.css";
+import RoiSelector from "./RoiSelector";
+
+const VideoPlayer = forwardRef(function VideoPlayer({ roi, onRoiChange, onPlay, isSelectingRoi, isScanning, subtitleOverlay, onFileLoaded }, ref) {
+  const videoRef = useRef(null);
+  const fileInputRef = useRef(null);
+  const folderInputRef = useRef(null);
+
+  const [videoSrc, setVideoSrc] = useState(null);
+  const videoPathRef = useRef(null);//          /////////////
+  const [duration, setDuration] = useState(0);
+  const [current, setCurrent] = useState(0);
+  const [volume, setVolume] = useState(1);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [isFinished, setIsFinished] = useState(false);
+
+  const toVideoNormalizedRoi = (overlayRoi) => {
+    const video = videoRef.current;
+    if (!video || !overlayRoi) return null;
+
+    const cw = video.clientWidth;
+    const ch = video.clientHeight;
+    const vw = video.videoWidth;
+    const vh = video.videoHeight;
+    if (!cw || !ch || !vw || !vh) return null;
+
+    // Match object-fit: contain geometry used by the video element.
+    const scale = Math.min(cw / vw, ch / vh);
+    const renderW = vw * scale;
+    const renderH = vh * scale;
+    const renderLeft = (cw - renderW) / 2;
+    const renderTop = (ch - renderH) / 2;
+
+    const roiLeft = overlayRoi.x * cw;
+    const roiTop = overlayRoi.y * ch;
+    const roiRight = roiLeft + overlayRoi.w * cw;
+    const roiBottom = roiTop + overlayRoi.h * ch;
+
+    // Clamp ROI to visible video rectangle (ignore black bars / controls overlap).
+    const ix1 = Math.max(renderLeft, roiLeft);
+    const iy1 = Math.max(renderTop, roiTop);
+    const ix2 = Math.min(renderLeft + renderW, roiRight);
+    const iy2 = Math.min(renderTop + renderH, roiBottom);
+
+    if (ix2 <= ix1 || iy2 <= iy1) return null;
+
+    const x = (ix1 - renderLeft) / renderW;
+    const y = (iy1 - renderTop) / renderH;
+    const w = (ix2 - ix1) / renderW;
+    const h = (iy2 - iy1) / renderH;
+
+    return { x, y, w, h };
+  };
+  // ✅ open file dialog (used by Header)
+  const openFileDialog = () => fileInputRef.current?.click();
+  const openFolderDialog = () => folderInputRef.current?.click();
+
+  const handleMediaLoad = (file) => {
+    if (videoSrc) URL.revokeObjectURL(videoSrc);
+    const url = URL.createObjectURL(file);
+    setVideoSrc(url);
+    videoPathRef.current = window.api?.getFilePath ? window.api.getFilePath(file) : (file.path || null);
+
+    setCurrent(0);
+    setDuration(0);
+    setIsPlaying(false);
+    setIsFinished(false);
+
+    // Notify parent — used to track in Playlist (localStorage recent files)
+    if (onFileLoaded) onFileLoaded(url, file.name);
+  };
+
+  const onSelectVideo = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    handleMediaLoad(file);
+  };
+
+  const onSelectFolder = (e) => {
+    const files = Array.from(e.target.files || []);
+    const videoFile = files.find(f => f.type.startsWith('video/') || f.name.match(/\.(mp4|webm|ogg|mov|mkv)$/i));
+    if (!videoFile) {
+      alert("No supported video files found in selected folder.");
+      return;
+    }
+    handleMediaLoad(videoFile);
+  };
+
+  // ✅ keep video element synced with state
+  useEffect(() => {
+    const v = videoRef.current;
+    if (!v) return;
+
+    if (!videoSrc) {
+      v.removeAttribute("src");
+      v.load();
+      return;
+    }
+
+    // Important: let React bind src (below) — just load it here
+    v.load();
+  }, [videoSrc]);
+
+  // ✅ video event listeners
+  useEffect(() => {
+    const v = videoRef.current;
+    if (!v) return;
+
+    const onLoaded = () => setDuration(v.duration || 0);
+    const onTime = () => setCurrent(v.currentTime || 0);
+    const onPlayEvent = () => {
+      setIsPlaying(true);
+      setIsFinished(false);
+      if (onPlay) onPlay();
+    };
+    const onPause = () => setIsPlaying(false);
+    const onEnded = () => {
+      setIsPlaying(false);
+      setIsFinished(true);
+    };
+
+    v.addEventListener("loadedmetadata", onLoaded);
+    v.addEventListener("timeupdate", onTime);
+    v.addEventListener("play", onPlayEvent);
+    v.addEventListener("pause", onPause);
+    v.addEventListener("ended", onEnded);
+
+    return () => {
+      v.removeEventListener("loadedmetadata", onLoaded);
+      v.removeEventListener("timeupdate", onTime);
+      v.removeEventListener("play", onPlayEvent);
+      v.removeEventListener("pause", onPause);
+      v.removeEventListener("ended", onEnded);
+    };
+  }, []);
+
+  // ✅ keyboard shortcuts (Arrow Seek)
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      // Ignore if user is typing
+      if (['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName)) return;
+
+      const v = videoRef.current;
+      if (!v || !videoSrc) return;
+
+      if (e.key === "ArrowLeft") {
+        const t = Math.max(0, v.currentTime - 1);
+        v.currentTime = t;
+        setCurrent(t);
+        setIsFinished(false);
+        e.preventDefault(); // Stop page scrolling
+      } else if (e.key === "ArrowRight") {
+        const t = Math.min(duration, v.currentTime + 1);
+        v.currentTime = t;
+        setCurrent(t);
+        if (t < duration) setIsFinished(false);
+        e.preventDefault();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [videoSrc, duration]);
+
+  // ✅ fullscreen handler
+  const handleDoubleClick = async () => {
+    // Target the full layout container to preserve controls in Fullscreen
+    const vContainer = videoRef.current?.closest('.video-player-container');
+    if (!vContainer) return;
+
+    try {
+      if (!document.fullscreenElement) {
+        await vContainer.requestFullscreen();
+      } else {
+        await document.exitFullscreen();
+      }
+    } catch (err) {
+      console.error("Fullscreen toggle failed", err);
+    }
+  };
+
+  // ✅ controls
+  const togglePlay = async () => {
+    const v = videoRef.current;
+    if (!v || !videoSrc) return;
+
+    try {
+      if (v.paused) await v.play();
+      else v.pause();
+    } catch (err) {
+      // autoplay restrictions / decode errors
+      console.error("Play failed:", err);
+    }
+  };
+
+  const stop = () => {
+    const v = videoRef.current;
+    if (!v) return;
+    v.pause();
+    v.currentTime = 0;
+    setCurrent(0);
+    setIsPlaying(false);
+    setIsFinished(false);
+  };
+
+  const onSeek = (e) => {
+    const v = videoRef.current;
+    if (!v) return;
+    const t = Number(e.target.value);
+    v.currentTime = t;
+    setCurrent(t);
+    if (t < duration) setIsFinished(false);
+  };
+
+  const onVolume = (e) => {
+    const v = videoRef.current;
+    if (!v) return;
+    const vol = Number(e.target.value);
+    v.volume = vol;
+    setVolume(vol);
+  };
+
+  // ✅ expose APIs to parent/Sidebar
+  useImperativeHandle(ref, () => ({
+    openFileDialog,
+    openFolderDialog,
+    getVideoPath: () => videoPathRef.current,
+
+    loadFileUrl: (url, name) => {
+      setVideoSrc(url);
+      videoPathRef.current = name || null;
+      setCurrent(0);
+      setDuration(0);
+      setIsPlaying(false);
+      setIsFinished(false);
+    },
+
+    getVideoFrame: (roiNorm) => {
+      const video = videoRef.current;
+      if (!video || video.readyState < 2) return null;
+
+      const vw = video.videoWidth;
+      const vh = video.videoHeight;
+      if (!vw || !vh) return null;
+
+      const r =
+        roiNorm && roiNorm.w > 0 && roiNorm.h > 0
+          ? roiNorm
+          : { x: 0, y: 0, w: 1, h: 1 };
+
+      const sx = Math.floor(r.x * vw);
+      const sy = Math.floor(r.y * vh);
+      const sw = Math.max(1, Math.floor(r.w * vw));
+      const sh = Math.max(1, Math.floor(r.h * vh));
+
+      const canvas = document.createElement("canvas");
+      canvas.width = sw;
+      canvas.height = sh;
+
+      const ctx = canvas.getContext("2d", { willReadFrequently: true });
+      ctx.drawImage(video, sx, sy, sw, sh, 0, 0, sw, sh);
+
+      return canvas;
+    },
+
+    seekTo: (seconds) => {
+      const v = videoRef.current;
+      if (!v) return;
+      const t = Number(seconds);
+      if (Number.isFinite(t)) v.currentTime = Math.max(0, t);
+    },
+
+    getCurrentTime: () => {
+      const v = videoRef.current;
+      return v ? v.currentTime : 0;
+    },
+  }));
+
+  const isVideoReallyFinished = isFinished || (duration > 0 && current >= duration - 0.1);
+
+  return (
+    <div className={`video-player-container ${isVideoReallyFinished ? "video-finished" : ""}`}>
+      {/* hidden file input */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="video/*"
+        onChange={onSelectVideo}
+        style={{ display: "none" }}
+      />
+      {/* hidden folder input */}
+      <input
+        ref={folderInputRef}
+        type="file"
+        webkitdirectory="true"
+        directory="true"
+        multiple
+        onChange={onSelectFolder}
+        style={{ display: "none" }}
+      />
+
+      <div className="video-player" onDoubleClick={handleDoubleClick}>
+        {/* ✅ Video element (React-controlled src to avoid “double frame” bugs) */}
+        <video
+          ref={videoRef}
+          className="video-element"
+          src={videoSrc || undefined}
+        />
+
+        {/* ROI overlay properly mounts permanently but uses internal logic to hide via CSS during scans */}
+        {videoSrc && (
+          <RoiSelector
+            enabled={Boolean(isSelectingRoi)}
+            isScanning={isScanning}
+            currentRoi={roi}
+            onChange={(overlayRoi) => {
+              const mapped = toVideoNormalizedRoi(overlayRoi);
+              if (mapped) onRoiChange?.(mapped);
+            }}
+          />
+        )}
+
+        {!videoSrc && (
+          <div className="empty-state">
+            <div className="icon">🎬</div>
+            <div className="title">No video selected</div>
+            <div className="subtitle">Use File → Open File (or button below)</div>
+            <button className="select-button" onClick={openFileDialog}>
+              Select Video
+            </button>
+          </div>
+        )}
+
+        {/* Subtitle overlay — synced to playback time, shown only when enabled */}
+        {subtitleOverlay?.enabled && subtitleOverlay?.segments?.length > 0 && (() => {
+          const activeSub = subtitleOverlay.segments.find((s) => {
+            const start = Number(s.timestamp?.[0] ?? s.timestamp ?? 0);
+            const end = Number(s.timestamp?.[1] ?? start + 4);
+            // +0.3s carry-over: fills tiny gaps between adjacent segments without affecting ordering
+            return current >= start && current <= end + 0.3;
+          });
+          if (!activeSub?.translatedText) return null;
+          return (
+            <div style={{
+              position: "absolute",
+              bottom: "10%",
+              left: "50%",
+              transform: "translateX(-50%)",
+              maxWidth: "85%",
+              textAlign: "center",
+              background: "rgba(0,0,0,0.65)",
+              color: "#ffffff",
+              fontSize: "clamp(14px, 2.2vw, 22px)",
+              fontWeight: 500,
+              padding: "6px 16px",
+              borderRadius: "6px",
+              lineHeight: 1.4,
+              textShadow: "0 1px 3px rgba(0,0,0,0.9)",
+              pointerEvents: "none",
+              zIndex: 30,
+              whiteSpace: "pre-wrap",
+            }}>
+              {activeSub.translatedText}
+            </div>
+          );
+        })()}
+      </div>
+
+      <div className="controls-bar">
+        {/* Row 1: Timeline Above */}
+        <div className="timeline-wrapper">
+          <input
+            className="timeline"
+            type="range"
+            min={0}
+            max={duration || 0}
+            step="0.01"
+            value={current}
+            onChange={onSeek}
+            disabled={!videoSrc}
+            style={{ "--progress": duration ? `${(current / duration) * 100}%` : "0%" }}
+          />
+        </div>
+
+        {/* Row 2: Controls Layout */}
+        <div className="controls-layout">
+          {/* Left: Current Time */}
+          <div className="time-group">
+            <span className="time current-time">{formatTime(current)}</span>
+          </div>
+
+          {/* Center: Playback Buttons */}
+          <div className="playback-group">
+            <button
+              className="control-btn secondary prev-btn"
+              onClick={() => {
+                if (videoSrc && videoRef.current) {
+                  const t = Math.max(0, current - 10);
+                  videoRef.current.currentTime = t;
+                  setCurrent(t);
+                  setIsFinished(false);
+                }
+              }}
+              disabled={!videoSrc}
+            >
+              |◁
+            </button>
+
+            <button className="control-btn primary play-btn" onClick={togglePlay} disabled={!videoSrc}>
+              {isPlaying ? "⏸" : "▶"}
+            </button>
+
+            <button
+              className="control-btn secondary next-btn"
+              onClick={() => {
+                if (videoSrc && videoRef.current) {
+                  const t = Math.min(duration, current + 10);
+                  videoRef.current.currentTime = t;
+                  setCurrent(t);
+                  if (t >= duration - 0.1) setIsFinished(true);
+                }
+              }}
+              disabled={!videoSrc}
+            >
+              ▷|
+            </button>
+          </div>
+
+          {/* Right: Volume & Stop */}
+          <div className="volume-group">
+            <span className="vol-icon">🔉</span>
+            <input
+              className="volume-slider"
+              type="range"
+              min={0}
+              max={1}
+              step="0.01"
+              value={volume}
+              onChange={onVolume}
+              disabled={!videoSrc}
+              style={{ "--progress": `${volume * 100}%` }}
+            />
+            <span className="time duration-time">{formatTime(duration)}</span>
+            <button className="control-btn stop-btn" onClick={stop} disabled={!videoSrc}>
+              ⏹
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+});
+
+export default VideoPlayer;
+
+function formatTime(sec) {
+  const s = Math.floor(sec || 0);
+  const m = Math.floor(s / 60);
+  const r = s % 60;
+  return `${m}:${String(r).padStart(2, "0")}`;
+}

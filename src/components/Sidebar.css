@@ -1,0 +1,228 @@
+.sidebar {
+  flex: 3; /* 30% width in flex layout */
+  /* Glassmorphism Outer Container */
+  background: rgba(8, 13, 30, 0.45);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+  box-sizing: border-box;
+  position: relative;
+  isolation: isolate;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Animated Energy Border for Sidebar */
+.sidebar::before {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  border-radius: 18px; /* 16 + 2px */
+  padding: 2px;
+  background: linear-gradient(90deg, #22d3ee, #b000ff, #22d3ee);
+  background-size: 250% 100%;
+  animation: energy-border-flow 4s linear infinite;
+  
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* Sidebar Glow Outer */
+.sidebar::after {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  border-radius: 18px;
+  padding: 2px;
+  background: linear-gradient(90deg, #22d3ee, #b000ff, #22d3ee);
+  background-size: 250% 100%;
+  animation: energy-border-flow 4s linear infinite;
+  
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  
+  filter: blur(8px);
+  opacity: 0.7;
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* Tab headers */
+.tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.tab {
+  flex: 1;
+  text-align: center;
+  padding: 8px 0;
+  font-size: 14px;
+  font-weight: 500;
+  color: #9ca3af; /* secondary text */
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.tab:hover {
+  color: #e5e7eb;
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+}
+
+.tab.active {
+  color: #22d3ee; /* cyan */
+  border-bottom: 2px solid #22d3ee;
+  text-shadow: 0 0 10px rgba(34, 211, 238, 0.5);
+}
+
+/* Tab content */
+.tab-content {
+  flex: 1;
+  overflow-y: auto;
+}
+
+/* Code card */
+.code-card, .speech-card, .copilot-card {
+  /* Apply glassmorphism inner card style */
+  background: rgba(20, 24, 36, 0.45);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.code-card:hover, .speech-card:hover, .copilot-card:hover {
+  box-shadow: 0 0 15px rgba(34, 211, 238, 0.05);
+  border-color: rgba(34, 211, 238, 0.15);
+}
+
+.card-title {
+  font-size: 16px;
+  font-weight: bold;
+  color: #e5e7eb; /* primary text */
+}
+
+.card-desc {
+  font-size: 14px;
+  color: #9ca3af; /* secondary text */
+}
+
+.extract-btn {
+  padding: 8px 16px;
+  /* Glassmorphism extraction button */
+  background: rgba(34, 211, 238, 0.1) !important;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  color: #22d3ee !important;
+  font-weight: bold;
+  border: 1px solid rgba(34, 211, 238, 0.4) !important;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  text-shadow: 0 0 8px rgba(34, 211, 238, 0.4);
+}
+
+.extract-btn:hover {
+  background: rgba(34, 211, 238, 0.25) !important;
+  box-shadow: 0 0 20px rgba(34, 211, 238, 0.6);
+  color: #fff !important;
+  border-color: #22d3ee !important;
+}
+
+.extract-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  box-shadow: none !important;
+  text-shadow: none !important;
+}
+
+.extract-btn.stop-mode {
+  background: rgba(239, 68, 68, 0.15) !important;
+  color: #ef4444 !important;
+  border-color: rgba(239, 68, 68, 0.5) !important;
+  text-shadow: 0 0 8px rgba(239, 68, 68, 0.4);
+}
+
+.extract-btn.stop-mode:hover {
+  background: rgba(239, 68, 68, 0.3) !important;
+  box-shadow: 0 0 20px rgba(239, 68, 68, 0.6);
+  color: #fff !important;
+  border-color: #ef4444 !important;
+}
+
+/* Fallback for standard buttons & inputs for consistent UI */
+.tab-content button:not(.extract-btn),
+.tab-content select, 
+.tab-content input {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Explicit Toggle Button overrides */
+.copilot-card div[style*="gap: 10px"] button,
+.speech-card div[style*="gap: 12"] button {
+  border-radius: 20px !important; /* pill shape */
+  background: rgba(8, 13, 30, 0.45) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border: 1px solid rgba(34, 211, 238, 0.3) !important;
+  color: #22d3ee !important;
+  text-shadow: 0 0 8px rgba(34, 211, 238, 0.3) !important;
+  box-shadow: 0 0 10px rgba(34, 211, 238, 0.05) !important;
+}
+
+.copilot-card div[style*="gap: 10px"] button:hover,
+.speech-card div[style*="gap: 12"] button:hover {
+  background: rgba(34, 211, 238, 0.2) !important;
+  box-shadow: 0 0 20px rgba(34, 211, 238, 0.6) !important;
+  border-color: #22d3ee !important;
+  color: #fff !important;
+}
+
+.copilot-card div[style*="gap: 10px"] button[style*="background: rgb(59, 130, 246)"],
+.copilot-card div[style*="gap: 10px"] button[style*="background: #3b82f6"] {
+  background: rgba(34, 211, 238, 0.35) !important;
+  border-color: #22d3ee !important;
+  box-shadow: 0 0 15px rgba(34, 211, 238, 0.5) !important;
+  color: #fff !important;
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.5) !important;
+}
+.output-area {
+  height: 320px;          /* increase height (change as you like) */
+  max-height: 420px;      /* optional limit */
+  overflow-y: auto;       /* scroll */
+  overflow-x: auto;       /* if long lines */
+  padding: 12px;
+  /* Glass container */
+  background: rgba(12, 16, 26, 0.6);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  color: #e5e7eb;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 13px;
+  line-height: 1.4;
+  white-space: pre;       /* keep formatting */
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.output-area:hover {
+  box-shadow: inset 0 0 20px rgba(34, 211, 238, 0.05);
+  border-color: rgba(34, 211, 238, 0.2);
+}
